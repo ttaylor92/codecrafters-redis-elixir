@@ -32,10 +32,12 @@ defmodule Server do
   end
 
   defp serve(client) do
-    client
+    data = client
       |> recieve_data()
       |> decode_data()
-      |> send_response(client)
+
+    IO.puts(data)
+    send_response(data, client)
 
     serve(client)
   end
