@@ -54,7 +54,7 @@ defmodule Server do
     data
   end
 
-  defp send_response([_, _, command, key | tail], client) do
+  defp send_response([command, key | tail], client) do
     case String.upcase(command) do
       "ECHO" -> :gen_tcp.send(client, simple_string(tail))
       "PING" -> :gen_tcp.send(client, simple_string("PONG"))
