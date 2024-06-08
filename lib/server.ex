@@ -4,8 +4,10 @@ defmodule Server do
   """
 
   use Application
+  import Utils
 
   def start(_type, _args) do
+    :ets.new(:cache, [:public, :named_table])
     Supervisor.start_link([{Task, fn -> Server.listen() end}], strategy: :one_for_one)
   end
 
@@ -52,11 +54,25 @@ defmodule Server do
     data
   end
 
-  defp send_response([_, _, command | tail], client) do
+  defp send_response([_, _, command, key | tail], client) do
     case String.upcase(command) do
-      "ECHO" -> :gen_tcp.send(client, "+#{tail}\r\n")
-      "PING" -> :gen_tcp.send(client, "+PONG\r\n")
+      "ECHO" -> :gen_tcp.send(client, simple_string(tail))
+      "PING" -> :gen_tcp.send(client, simple_string("PONG"))
+      "GET" -> :gen_tcp.send(client, get_value(key))
+      "SET" -> :gen_tcp.send(client, store_value(key, tail))
       _ -> :gen_tcp.send(client, "Invalid command found: #{command}")
+    end
+  end
+
+  defp store_value(key, val) do
+    :ets.insert(:cache, {key, val})
+    simple_string("OK")
+  end
+
+  defp get_value(key) do
+    case :ets.lookup(:cache, key) do
+      [{_, val}] -> bulk_string(val)
+      _ -> null()
     end
   end
 end
