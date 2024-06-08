@@ -47,6 +47,7 @@ defmodule Server do
     |> String.trim()  # Remove leading/trailing whitespace
     |> String.replace(~r/\$\d/, "") # Replace a $<any_digit> with blank
     |> String.split("\r\n")  # Split on newline characters
+    |> Enum.filter(&(&1 != "")) # Remove empty strings from array
   end
 
   defp recieve_data(client) do
@@ -54,7 +55,7 @@ defmodule Server do
     data
   end
 
-  defp send_response([_, _, command, key | tail], client) do
+  defp send_response([command, key | tail], client) do
     case String.upcase(command) do
       "ECHO" -> :gen_tcp.send(client, simple_string(tail))
       "PING" -> :gen_tcp.send(client, simple_string("PONG"))
