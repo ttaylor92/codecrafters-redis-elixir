@@ -34,9 +34,18 @@ defmodule Server do
   defp serve(client) do
     client
       |> recieve_data()
+      |> decode_data()
       |> send_response(client)
 
     serve(client)
+  end
+
+  defp decode_data(data) do
+    data
+    |> String.trim()  # Remove leading/trailing whitespace
+    |> String.split("\r\n")  # Split on newline characters
+    |> Enum.chunk_every(2)  # Group consecutive elements into pairs
+    |> Enum.map(fn [_command, value] -> String.slice(value, 1, byte_size(value) - 1) end)
   end
 
   defp recieve_data(client) do
@@ -44,8 +53,11 @@ defmodule Server do
     data
   end
 
-  defp send_response(data, client) do
-    IO.puts(data)
-    :gen_tcp.send(client, "+PONG\r\n")
+  defp send_response([head | tail], client) do
+    case String.upcase(head) do
+      "ECHO" -> :gen_tcp.send(client, tail)
+      "PING" -> :gen_tcp.send(client, "+PONG\r\n")
+      _ -> :gen_tcp.send(client, "Invalid command found: #{head}")
+    end
   end
 end
