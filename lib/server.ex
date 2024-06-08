@@ -46,6 +46,7 @@ defmodule Server do
     data
     |> String.trim()  # Remove leading/trailing whitespace
     |> String.replace(~r/\$\d/, "") # Replace a $<any_digit> with blank
+    |> String.replace(~r/\*\d/, "") # Replace a *<any_digit> with blank
     |> String.split("\r\n")  # Split on newline characters
     |> Enum.filter(&(&1 != "")) # Remove empty strings from array
   end
