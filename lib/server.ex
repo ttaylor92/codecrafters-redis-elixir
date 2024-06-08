@@ -26,11 +26,12 @@ defmodule Server do
 
   defp serve(socket) do
     socket
+      |> accept_next()
       |> recieve_data()
       |> send_response(socket)
 
     # Spawn a task to handle the current connection concurrently
-    Task.start_link(fn ->
+    spawn(fn ->
       serve(accept_next(socket))  # Recursively accept and serve next client
     end)
   end
