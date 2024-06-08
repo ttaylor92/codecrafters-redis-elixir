@@ -22,7 +22,7 @@ defmodule Server do
     # ensures that we don't run into 'Address already in use' errors
     {:ok, socket} = :gen_tcp.listen(6379, [:binary, active: false, reuseaddr: true])
     {:ok, client} = :gen_tcp.accept(socket)
-    serve(client)
+    Task.start_link(fn -> serve(client) end)
   end
 
   defp serve(socket) do
