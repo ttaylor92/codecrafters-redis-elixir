@@ -59,10 +59,16 @@ defmodule Server do
   defp send_response([command, key | tail], client) do
     case String.upcase(command) do
       "ECHO" -> :gen_tcp.send(client, simple_string(tail))
-      "PING" -> :gen_tcp.send(client, simple_string("PONG"))
       "GET" -> :gen_tcp.send(client, get_value(key))
       "SET" -> :gen_tcp.send(client, store_value(key, tail))
       _ -> :gen_tcp.send(client, "Invalid command found: #{command}")
+    end
+  end
+
+  def send_response([command | _tail]) do
+    case String.upcase(command) do
+      "PING" -> simple_string("PONG")
+      _ -> "Invalid command found: #{command}"
     end
   end
 
