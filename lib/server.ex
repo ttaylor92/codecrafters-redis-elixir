@@ -25,20 +25,27 @@ defmodule Server do
   end
 
   defp serve(socket) do
-    socket
-      |> accept_next()
-      |> recieve_data()
-      |> send_response(socket)
-
-    # Spawn a task to handle the current connection concurrently
-    spawn(fn ->
-      serve(accept_next(socket))  # Recursively accept and serve next client
+    # Receive data from the current client concurrently
+    Task.async(fn ->
+      {:ok, _data} = receive do
+        {^socket, data} -> data
+      end
+      # Process the data (potentially in a separate function)
+      # ...
     end)
-  end
 
-  defp accept_next(listen_socket) do
-    {:ok, client} = :gen_tcp.accept(listen_socket)
-    client
+    # Accept the next connection concurrently
+    {:ok, client} = :gen_tcp.accept(socket)
+
+    # Send response to the current client
+    data = recieve_data(socket)
+    send_response(data, socket)
+
+    # Close the connection after processing the request
+    :gen_tcp.close(socket)
+
+    # Recursively serve the next client
+    serve(client)
   end
 
   defp recieve_data(socket) do
