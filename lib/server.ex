@@ -49,6 +49,7 @@ defmodule Server do
     |> String.replace(~r/\*\d/, "") # Replace a *<any_digit> with blank
     |> String.split("\r\n")  # Split on newline characters
     |> Enum.filter(&(&1 != "")) # Remove empty strings from array
+    |> List.update_at(0, &String.upcase/1) # Ensure command is uppercased
   end
 
   defp recieve_data(client) do
@@ -56,20 +57,20 @@ defmodule Server do
     data
   end
 
-  defp send_response([command, key | tail], client) do
-    case String.upcase(command) do
-      "ECHO" -> :gen_tcp.send(client, simple_string(tail))
-      "GET" -> :gen_tcp.send(client, get_value(key))
-      "SET" -> :gen_tcp.send(client, store_value(key, tail))
-      _ -> :gen_tcp.send(client, "Invalid command found: #{command}")
-    end
+  defp send_response(["ECHO" | tail], client) do
+    :gen_tcp.send(client, simple_string(tail))
   end
 
-  def send_response([command | _tail]) do
-    case String.upcase(command) do
-      "PING" -> simple_string("PONG")
-      _ -> "Invalid command found: #{command}"
-    end
+  defp send_response(["GET" | key], client) do
+    :gen_tcp.send(client, get_value(key))
+  end
+
+  defp send_response(["SET", key | tail], client) do
+    :gen_tcp.send(client, store_value(key, tail))
+  end
+
+  defp send_response(["PING" | _tail], client) do
+    :gen_tcp.send(client, simple_string("PONG"))
   end
 
   defp store_value(key, val) do
