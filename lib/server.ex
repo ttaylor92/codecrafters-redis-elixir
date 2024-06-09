@@ -6,8 +6,10 @@ defmodule Server do
   use Application
   import Utils
 
+  @table_name :cache
+
   def start(_type, _args) do
-    :ets.new(:cache, [:public, :named_table])
+    :ets.new(@table_name, [:public, :named_table])
     Supervisor.start_link([{Task, fn -> Server.listen() end}], strategy: :one_for_one)
   end
 
@@ -65,6 +67,10 @@ defmodule Server do
     :gen_tcp.send(client, get_value(key))
   end
 
+  defp send_response(["SET", key, value, expiry_key, expiry | _tail], client) when expiry_key in ["px", "PX", "Px", "pX"] do
+    :gen_tcp.send(client, store_value(key, value, :os.system_time(:millisecond) + expiry))
+  end
+
   defp send_response(["SET", key | tail], client) do
     :gen_tcp.send(client, store_value(key, tail))
   end
@@ -74,14 +80,24 @@ defmodule Server do
   end
 
   defp store_value(key, val) do
-    :ets.insert(:cache, {key, val})
+    :ets.insert(@table_name, {key, val})
+    simple_string("OK")
+  end
+
+  defp store_value(key, val, _expiry) do
+    timestamp = :os.system_time(:millisecond)
+    :ets.insert(@table_name, {key, val, timestamp})
     simple_string("OK")
   end
 
   defp get_value(key) do
-    case :ets.lookup(:cache, key) do
+    current_time = :os.system_time(:millisecond)
+
+    case :ets.lookup(@table_name, key) do
       [{_, val}] -> bulk_string(val)
+      [{_, val, timestamp}] when timestamp < current_time -> bulk_string(val)
       _ -> null()
     end
   end
+
 end
