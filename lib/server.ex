@@ -61,7 +61,7 @@ defmodule Server do
     :gen_tcp.send(client, simple_string(tail))
   end
 
-  defp send_response(["GET" | key], client) do
+  defp send_response(["GET" | [key]], client) do
     :gen_tcp.send(client, get_value(key))
   end
 
