@@ -94,7 +94,7 @@ defmodule Server do
 
     case :ets.lookup(@table_name, key) do
       [{_, val}] -> bulk_string(val)
-      [{_, val, timestamp}] when timestamp < current_time -> bulk_string(val)
+      [{_, val, timestamp}] when timestamp > current_time -> bulk_string(val)
       _ -> null()
     end
   end
