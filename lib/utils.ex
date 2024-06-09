@@ -8,4 +8,9 @@ defmodule Utils do
   end
 
   def null, do: "$-1\r\n"
+
+  def parse_arguments do
+    {opts, _} = System.argv() |> OptionParser.parse!(strict: [key: :string])
+    opts
+  end
 end

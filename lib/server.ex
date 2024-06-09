@@ -10,8 +10,8 @@ defmodule Server do
   @default_port 6379
 
   def start(_type, _args) do
-    {opts, _} = System.argv() |> OptionParser.parse!(strict: [port: :integer])
-    port = opts[:port] || @default_port
+    args = parse_arguments();
+    port = args[:port] |> String.to_integer() || @default_port
 
     children = [
       {Task.Supervisor, name: Server.TaskSupervisor},
@@ -33,6 +33,16 @@ defmodule Server do
     #
     # Since the tester restarts your program quite often, setting SO_REUSEADDR
     # ensures that we don't run into 'Address already in use' errors
+    args = parse_arguments();
+    if args[:replica_host] && args[:replica_port] do
+      IO.puts("Replicating to: #{args[:replica_host]}:#{args[:replica_port]}")
+      store_value(:is_master, false)
+      store_value(:replica_host, args[:replica_host])
+      store_value(:replica_port, args[:replica_port])
+    else
+      store_value(:is_master, true)
+    end
+
     {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])
     accept_next(socket)
   end
@@ -90,7 +100,12 @@ defmodule Server do
   end
 
   defp send_response(["INFO", "replication"], client) do
-    :gen_tcp.send(client, bulk_string("role:master"))
+    msg = case get_local_value(:is_master) do
+        true -> "role:master"
+        false -> "role:slave"
+      end
+
+    :gen_tcp.send(client, bulk_string(msg))
   end
 
   defp store_value(key, val) do
@@ -110,6 +125,14 @@ defmodule Server do
       [{_, val}] -> bulk_string(val)
       [{_, val, timestamp}] when timestamp > current_time -> bulk_string(val)
       _ -> null()
+    end
+  end
+
+  defp get_local_value(key) do
+    case :ets.lookup(@table_name, key) do
+      [{_, val}] -> val
+      [{_, val, timestamp}] -> val
+      _ -> nil
     end
   end
 
