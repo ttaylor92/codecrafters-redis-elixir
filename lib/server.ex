@@ -68,7 +68,7 @@ defmodule Server do
   end
 
   defp send_response(["SET", key, value, expiry_key, expiry | _tail], client) when expiry_key in ["px", "PX", "Px", "pX"] do
-    :gen_tcp.send(client, store_value(key, value, :os.system_time(:millisecond) + expiry))
+    :gen_tcp.send(client, store_value(key, value, :os.system_time(:millisecond) + String.to_integer(expiry)))
   end
 
   defp send_response(["SET", key | tail], client) do
@@ -84,9 +84,8 @@ defmodule Server do
     simple_string("OK")
   end
 
-  defp store_value(key, val, _expiry) do
-    timestamp = :os.system_time(:millisecond)
-    :ets.insert(@table_name, {key, val, timestamp})
+  defp store_value(key, val, expiry) do
+    :ets.insert(@table_name, {key, val, expiry})
     simple_string("OK")
   end
 
