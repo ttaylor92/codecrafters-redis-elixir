@@ -7,16 +7,20 @@ defmodule Server do
   import Utils
 
   @table_name :cache
+  @default_port 6379
 
   def start(_type, _args) do
+    {opts, _} = System.argv() |> OptionParser.parse!(strict: [port: :integer])
+    port = opts[:port] || @default_port
+
     :ets.new(@table_name, [:public, :named_table])
-    Supervisor.start_link([{Task, fn -> Server.listen() end}], strategy: :one_for_one)
+    Supervisor.start_link([{Task, fn -> Server.listen(port) end}], strategy: :one_for_one)
   end
 
   @doc """
   Listen for incoming connections
   """
-  def listen() do
+  def listen(port) do
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     IO.puts("Logs from your program will appear here!")
 
@@ -24,7 +28,7 @@ defmodule Server do
     #
     # Since the tester restarts your program quite often, setting SO_REUSEADDR
     # ensures that we don't run into 'Address already in use' errors
-    {:ok, socket} = :gen_tcp.listen(6379, [:binary, active: false, reuseaddr: true])
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])
     accept_next(socket)
   end
 
