@@ -13,8 +13,13 @@ defmodule Server do
     {opts, _} = System.argv() |> OptionParser.parse!(strict: [port: :integer])
     port = opts[:port] || @default_port
 
+    children = [
+      {Task.Supervisor, name: Server.TaskSupervisor},
+      Supervisor.child_spec({Task, fn -> Server.listen(port) end}, restart: :permanent)
+    ]
+
     :ets.new(@table_name, [:public, :named_table])
-    Supervisor.start_link([{Task, fn -> Server.listen(port) end}], strategy: :one_for_one)
+    Supervisor.start_link(children, strategy: :one_for_one, name: Server.Superviser)
   end
 
   @doc """
@@ -34,7 +39,8 @@ defmodule Server do
 
   defp accept_next(listen_socket) do
     {:ok, client} = :gen_tcp.accept(listen_socket)
-    Task.start_link(fn -> serve(client) end)
+    {:ok, pid} = Task.Supervisor.start_child(Server.TaskSupervisor, fn -> serve(client) end)
+    :ok = :gen_tcp.controlling_process(client, pid)
 
     accept_next(listen_socket)
   end
@@ -81,6 +87,10 @@ defmodule Server do
 
   defp send_response(["PING" | _tail], client) do
     :gen_tcp.send(client, simple_string("PONG"))
+  end
+
+  defp send_response(["INFO", "replication"], client) do
+    :gen_tcp.send(client, bulk_string("role:master"))
   end
 
   defp store_value(key, val) do
