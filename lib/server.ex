@@ -34,11 +34,13 @@ defmodule Server do
     # Since the tester restarts your program quite often, setting SO_REUSEADDR
     # ensures that we don't run into 'Address already in use' errors
     args = parse_arguments();
-    if args[:replica_host] && args[:replica_port] do
-      IO.puts("Replicating to: #{args[:replica_host]}:#{args[:replica_port]}")
+    if args[:replicaof] do
+      [replica_host | replica_port] = args[:replicaof] |> String.split(" ")
+
+      IO.puts("Replicating to: #{replica_host}:#{replica_port}")
       store_value(:is_master, false)
-      store_value(:replica_host, args[:replica_host])
-      store_value(:replica_port, args[:replica_port])
+      store_value(:replica_host, replica_host)
+      store_value(:replica_port, replica_port)
     else
       store_value(:is_master, true)
     end
