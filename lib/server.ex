@@ -11,7 +11,7 @@ defmodule Server do
 
   def start(_type, _args) do
     args = parse_arguments();
-    port = args[:port] |> String.to_integer() || @default_port
+    port = args[:port] != nil && args[:port] |> String.to_integer() || @default_port
 
     children = [
       {Task.Supervisor, name: Server.TaskSupervisor},
