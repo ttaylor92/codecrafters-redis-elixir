@@ -103,11 +103,11 @@ defmodule Server do
 
   defp send_response(["INFO", "replication"], client) do
     msg = case get_local_value(:is_master) do
-        true -> "role:master"
-        false -> "role:slave"
+        true -> bulk_string("role:master") <> bulk_string("master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb") <> bulk_string("master_repl_offset:0")
+        false -> bulk_string("role:slave")
       end
 
-    :gen_tcp.send(client, bulk_string(msg) <> bulk_string("master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb") <> bulk_string("master_repl_offset:0"))
+    :gen_tcp.send(client, msg)
   end
 
   defp store_value(key, val) do
