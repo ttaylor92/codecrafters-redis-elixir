@@ -131,7 +131,7 @@ defmodule Server do
   defp get_local_value(key) do
     case :ets.lookup(@table_name, key) do
       [{_, val}] -> val
-      [{_, val, timestamp}] -> val
+      [{_, val, _}] -> val
       _ -> nil
     end
   end
