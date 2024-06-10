@@ -107,7 +107,7 @@ defmodule Server do
         false -> "role:slave"
       end
 
-    :gen_tcp.send(client, bulk_string(msg))
+    :gen_tcp.send(client, bulk_string(msg) <> bulk_string("master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb") <> bulk_string("master_repl_offset:0"))
   end
 
   defp store_value(key, val) do
