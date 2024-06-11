@@ -102,7 +102,7 @@ defmodule Server do
 
   defp send_response(["INFO", "replication"], client) do
     msg = case get_local_value(:is_master) do
-        true -> bulk_string("role:master") <> bulk_string("master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb") <> bulk_string("master_repl_offset:0")
+        true -> bulk_string("role:master\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:0")
         false -> bulk_string("role:slave")
       end
 
