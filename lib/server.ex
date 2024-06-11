@@ -10,8 +10,7 @@ defmodule Server do
   @default_port 6379
 
   def start(_type, _args) do
-    args = parse_arguments();
-    port = args[:port] != nil && args[:port] |> String.to_integer() || @default_port
+    port = if length(System.argv()) === 0, do: @default_port, else: parse_arguments()[:port] |> String.to_integer()
 
     children = [
       {Task.Supervisor, name: Server.TaskSupervisor},
@@ -33,7 +32,7 @@ defmodule Server do
     #
     # Since the tester restarts your program quite often, setting SO_REUSEADDR
     # ensures that we don't run into 'Address already in use' errors
-    args = parse_arguments();
+    args = if length(System.argv()) === 0, do: %{}, else: parse_arguments()
     if args[:replicaof] do
       [replica_host | replica_port] = args[:replicaof] |> String.split(" ")
 
@@ -77,7 +76,7 @@ defmodule Server do
   end
 
   defp recieve_data(client) do
-    {:ok, data} = :gen_tcp.recv(client, 0);
+    {:ok, data} = :gen_tcp.recv(client, 0)
     data
   end
 
